@@ -1,0 +1,35 @@
+FROM veryxuliang/nodebase:10.15.3
+#FROM dev-hub.jiatuiyun.net/base/nodeend:v10.15.3
+WORKDIR /srv
+ADD ./ /srv
+ADD run.sh /usr/local/bin
+#CMD node index.js --spring.cloud.config.uri=$CONFIG_SERVER_URL --spring.cloud.config.username=$CONFIG_SERVER_USER --spring.cloud.config.password=$CONFIG_SERVER_PWDS $JAR_BOOT_ARG
+CMD ["/bin/sh","-c","/usr/local/bin/run.sh"]
+
+ENV envtype produ
+
+
+
+###
+#!/bin/sh
+if [ -f /var/run/secrets/kubernetes.io/serviceaccount/namespace ];then
+   MY_POD_NAMESPACE=`cat /var/run/secrets/kubernetes.io/serviceaccount/namespace`
+   export MY_POD_NAMESPACE
+fi
+
+if [ "x${envtype}" = "xdev" ];then
+      cd /srv
+      pm2-runtime  pm2_v2.config.js
+      #echo $envtype
+fi
+
+if [ "x${envtype}" = "xtest" ];then
+	cd /srv
+	pm2-runtime  pm2_v4.config.js
+fi
+
+if [ "x${envtype}" = "xprodu" ];then
+	cd /srv
+	npm run db:update:prod
+	pm2-runtime  pm2_v8.config.js
+fi
